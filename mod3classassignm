@@ -1,0 +1,85 @@
+// Set Up MySql database //#
+
+CREATE DATABASE ecommerce_api;
+
+#// Install Dependencies & Initialize Flask App //#
+
+python -m venv venv
+
+#//Activate the virtual environment#//
+
+.\venv\Scripts\activate
+
+#//Install dependencies:#//
+
+pip install Flask Flask-RESTful Flask-MySQLdb
+
+#//Configure the App with Database URI#//
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:<Dexte1r2d!>@localhost/ecommerce_api'
+
+#//Database Models#//
+
+#//User Table#//
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(200), nullable=True)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    orders = db.relationship('Order', backref='user', lazy=True)
+
+#//Order Table#//
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    order_date = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    products = db.relationship('Product', secondary='order_product', lazy='subquery',
+                               backref=db.backref('orders', lazy=True))
+
+
+#//Product Table#//
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    product_name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+
+#//Order_Product Association Table#//
+
+class OrderProduct(db.Model):
+    __tablename__ = 'order_product'
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), primary_key=True)
+    order = db.relationship(Order, backref='order_products')
+    product = db.relationship(Product, backref='order_products')
+
+
+#//Marshmallow Schemas#//
+
+#//User Schema#//
+
+class UserSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = User
+        include_fk = True
+
+#//Product Schema#//
+
+class ProductSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Product
+        include_fk = True
+
+#//Order Schema#//
+
+class OrderSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Order
+        include_fk = True
+
+#//Testing#//
+
+#//Database Setup#//
+
+from app import db
+db.create_all()
